@@ -91,15 +91,20 @@ def shortest_path(source, target):
 
     If no possible path, returns None.
     """
-
+    
     # Start is a node with source state, no parent(s) and no action(s) yet
     # Use StackFrontier, i.e. Depth-first search
     start = Node(state=source, parent=None, action=None)
-    frontier = StackFrontier()
+    frontier = QueueFrontier()
     frontier.add(start)
 
     # An empty set to store the explored paths
     explored = set()
+
+    # If source is same as target, return 0 degrees
+    if source == target:
+        no_degree = []
+        return no_degree
 
     while True:
 
@@ -118,7 +123,7 @@ def shortest_path(source, target):
             if not frontier.contains_state(person_id) and person_id not in explored:
                 child = Node(state=person_id, parent=node, action=movie_id)
 
-            # If node is the goal, then we have a solution
+                # If node is the target, then we have a solution
                 if child.state == target:
                     solution = []
                     while child.parent is not None:
@@ -128,7 +133,7 @@ def shortest_path(source, target):
                     solution.reverse()
                     return solution
 
-                frontier.add(child)
+                frontier.add(child)      
 
 
 def person_id_for_name(name):
