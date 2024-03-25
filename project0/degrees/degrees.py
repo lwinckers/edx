@@ -54,8 +54,8 @@ def load_data(directory):
 
 def main():
     if len(sys.argv) > 2:
-        sys.exit("Usage: python degrees.py [directory]")  
-    directory = sys.argv[1] if len(sys.argv) == 2 else "large"
+        sys.exit("Usage: python degrees.py [directory]")
+    directory = sys.argv[1] if len(sys.argv) == 2 else "small"
 
     # Load data from files into memory
     print("Loading data...")
@@ -92,9 +92,6 @@ def shortest_path(source, target):
     If no possible path, returns None.
     """
 
-    # To keep track of the number of explored paths
-    number_explored = 0
-
     # Start is a node with source state, no parent(s) and no action(s) yet
     # Use StackFrontier, i.e. Depth-first search
     start = Node(state=source, parent=None, action=None)
@@ -116,9 +113,22 @@ def shortest_path(source, target):
         # Add the node to the explored set
         explored.add(node)
 
+        # Add neighbors to frontier
+        for movie_id, person_id in neighbors_for_person(node.state):
+            if not frontier.contains_state(person_id) and person_id not in explored:
+                child = Node(state=person_id, parent=node, action=movie_id)
 
-    # TODO
-    raise NotImplementedError
+            # If node is the goal, then we have a solution
+                if child.state == target:
+                    solution = []
+                    while child.parent is not None:
+                        solution.append((child.action, child.state))
+                        child = child.parent
+
+                    solution.reverse()
+                    return solution
+
+                frontier.add(child)
 
 
 def person_id_for_name(name):
