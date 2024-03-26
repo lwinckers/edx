@@ -90,8 +90,7 @@ def shortest_path(source, target):
     that connect the source to the target.
 
     If no possible path, returns None.
-    """
-    
+    """   
     # Start is a node with source state, no parent(s) and no action(s) yet
     # Use StackFrontier, i.e. Depth-first search
     start = Node(state=source, parent=None, action=None)
@@ -106,17 +105,13 @@ def shortest_path(source, target):
         no_degree = []
         return no_degree
 
-    while True:
+    while not frontier.empty():
 
-        # If the frontier is empty, i.e. no possible path, return None
-        if frontier.empty():
-            return None
-        
         # Remove the node from the frontier
         node = frontier.remove()
 
         # Add the node to the explored set
-        explored.add(node)
+        explored.add(node.state)
 
         # Add neighbors to frontier
         for movie_id, person_id in neighbors_for_person(node.state):
@@ -133,7 +128,9 @@ def shortest_path(source, target):
                     solution.reverse()
                     return solution
 
-                frontier.add(child)      
+                frontier.add(child)
+
+    return None
 
 
 def person_id_for_name(name):
