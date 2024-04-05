@@ -206,6 +206,22 @@ class MinesweeperAI():
         # The function should add a new sentence to the AI’s knowledge base, 
         # based on the value of cell and count, to indicate that count of the cell’s neighbors are mines. 
         # Be sure to only include cells whose state is still undetermined in the sentence.
+    
+    def return_surrounding_cells(self, cell):   
+        i, j = cell
+        surrounding_cells = set()
+
+        # Iterate over the neighboring cells.
+        for x in range(i - 1, i + 2):
+            for y in range(j - 1, j + 2):
+                # Exclude the cell itself.
+                if (x, y) != (i, j):
+                    # Check if the cell is within the board boundaries.
+                    if 0 <= x < self.height and 0 <= y < self.width:
+                        surrounding_cells.add((x, y))
+
+        return surrounding_cells
+
 
         # If, based on any of the sentences in self.knowledge, new cells can be marked as safe or as mines, then the function should do so.
 
