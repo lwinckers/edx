@@ -139,8 +139,61 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         * everyone not in `one_gene` or `two_gene` does not have the gene, and
         * everyone in set `have_trait` has the trait, and
         * everyone not in set` have_trait` does not have the trait.
-    """
-    #raise NotImplementedError
+    """  
+    # Set joint_prob to 1 otherwise it will "not be accessed" later on.
+    joint_prob = 1
+
+    for person in people:
+
+        person_prob = 1
+        mother_prob = 1
+        father_prob = 1
+
+        # Set known mother and/or father.
+        mother = people[person]['mother']
+        father = people[person]['father']
+
+        # Set number of genes for person.
+        person_genes = (2 if person in two_genes else 1 if person in one_gene else 0)
+
+        # Set True or False for have_trait.
+        person_trait = person in have_trait
+
+        # If no parents known then probability for having gene is the known probability for the amount of genes.
+        if not mother and not father:
+            person_prob *= PROBS['gene'][person_genes]
+
+        # If anyone of the parents known, prob is calculated based on amount of genes and possiblity to mutate.
+        else:
+            if mother in two_genes:
+                mother_prob *= 1 - PROBS['mutation']
+            elif mother in one_gene:
+                mother_prob *= (0.5 * (1 - PROBS["mutation"])) + (0.5 * PROBS["mutation"]) # Equals 0.5 
+            else:
+                mother_prob *= PROBS['mutation']
+
+            if father in two_genes:
+                father_prob *= 1 - PROBS['mutation']
+            elif father in one_gene:
+                father_prob *=  (0.5 * (1 - PROBS["mutation"])) + (0.5 * PROBS["mutation"]) # Equals 0.5
+            else:
+                father_prob *= PROBS['mutation']
+
+            #Calculate probability based on known probabilities.
+            if person_genes == 2:
+                person_prob *= father_prob * mother_prob
+            elif person_genes == 1:
+                person_prob *= ((1 - mother_prob) * father_prob) + ((1 - father_prob) * mother_prob)
+            else:
+                person_prob *= (1 - mother_prob) * (1 - father_prob)
+
+        # Multiply with probability of having the trait or not.
+        person_prob *= PROBS['trait'][person_genes][person_trait]
+
+        # Multiply all calculated probabilities for all people to get joint probability.
+        joint_prob *= person_prob
+
+    return joint_prob
 
 
 def update(probabilities, one_gene, two_genes, have_trait, p):
@@ -150,7 +203,14 @@ def update(probabilities, one_gene, two_genes, have_trait, p):
     Which value for each distribution is updated depends on whether
     the person is in `have_gene` and `have_trait`, respectively.
     """
-    #raise NotImplementedError
+    for person in probabilities:
+        # Get the number of genes and triat of person.
+        person_genes = (2 if person in two_genes else 1 if person in one_gene else 0)
+        person_trait = person in have_trait
+
+        # Update based on number of genes and trait the probability.
+        probabilities[person]['gene'][person_genes] += p
+        probabilities[person]['trait'][person_trait] += p
 
 
 def normalize(probabilities):
@@ -158,7 +218,14 @@ def normalize(probabilities):
     Update `probabilities` such that each probability distribution
     is normalized (i.e., sums to 1, with relative proportions the same).
     """
-    #raise NotImplementedError
+    for person in probabilities:
+        # Calculate the sum of the probabilities of gene and trait.
+        gene_sum = sum(probabilities[person]['gene'].values())
+        trait_sum = sum(probabilities[person]['trait'].values())
+
+        # Normalize the probabilities using the sum.
+        probabilities[person]['gene'] = { gene : (prob / gene_sum) for gene, prob in probabilities[person]['gene'].items() }
+        probabilities[person]['trait'] = { trait : (prob / trait_sum) for trait, prob in probabilities[person]['trait'].items() }
 
 
 if __name__ == "__main__":
