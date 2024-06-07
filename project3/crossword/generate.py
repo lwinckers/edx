@@ -101,14 +101,14 @@ class CrosswordCreator():
          constraints; in this case, the length of the word.)
         """
         # Deep copy the domains.
-        domain_copy = copy.deepcopy(self.domains)
+        domains_copy = copy.deepcopy(self.domains)
 
         # For each variable get the length.
-        for variable in domain_copy:
+        for variable in domains_copy:
             length = variable.length
             # For each word in domains, check if length is not the same as variable length.
-            # If so, remove word from domains (not from the copy).
-            for word in domain_copy[variable]:
+            # If length is not the same, remove word from domains (not from the copy).
+            for word in domains_copy[variable]:
                 if len(word) != length:
                     self.domains[variable].remove(word)
 
@@ -122,27 +122,34 @@ class CrosswordCreator():
         False if no revision was made.
         """
         # Deep copy the domains.
-        domain_copy = copy.deepcopy(self.domains)
+        #domain_copy = copy.deepcopy(self.domains)
         
         # Set revision_made variable to False.
         revision_made = False
 
         # Retrieve overlapping cells for x and y.
-        xoverlap, yoverlap = self.crossword.overlaps[x, y]
+        overlap = self.crossword.overlaps[x, y]
 
         # For every word in domains (for both x and y), check if there is overlap based on potentially the same letter in overlapping position.
-        if xoverlap:
-            for xword in domain_copy[x]:
+        if overlap:
+
+            xoverlap, yoverlap = overlap
+            domains_to_remove = set()
+
+            for xword in self.domains[x]:
                 value_matched = False
-                for yword in domain_copy[y]:
-                    if xword[xoverlap] == yword[yoverlap]:
+                
+                for yword in self.domains[y]:
+                    if xword != yword and xword[xoverlap] == yword[yoverlap]:
                         value_matched = True
                         break                           # No need to check other y if there is already overlap found.
-                if value_matched:
-                    continue                            # Continue with another x if matched value is found for previous x.
-                else:
-                    self.domains[x].remove(xword)       # Remove x value/word from domains if no matching value is found with y.
-                    revision_made = True
+
+                if not value_matched:
+                    domains_to_remove.add(xword) 
+
+            if domains_to_remove:   
+                self.domains[x] -= domains_to_remove       # Remove x value/word from domains if no matching value is found with y.
+                revision_made = True
 
         return revision_made
 
@@ -155,14 +162,40 @@ class CrosswordCreator():
         Return True if arc consistency is enforced and no domains are empty;
         return False if one or more domains end up empty.
         """
-        raise NotImplementedError
+        
+        if arcs is None:
+            # If arcs is None, start with an initial queue of all of the arcs in the problem.
+            queue = []
+            
+            for variable in self.crossword.variables:               # For each variable, retrieve each neighbor of that variable.
+                for neighbor_variable in self.crossword.neighbors(variable):
+                    queue.append((variable, neighbor_variable))     # Add all arcs to queue.
+        else:
+            queue = list(arcs)
+
+        # If there are variables in the queue, pop the first combination of variables.
+        while queue:
+            x, y = queue.pop(0)
+
+            if self.revise(x, y):                       # Check if revision made is True, to make them arc consistent.
+                if len(self.domains[x]) == 0:           # If domain ends up empty, return False.
+                    return False
+                
+                for neighbor in self.crossword.neighbors(x):    # Append queue with all neighbors based on X, check if neighbor is not already y.
+                    if neighbor != y:
+                        queue.append((neighbor, x))
+
+        return True                                     # Return True if arc consistency is enforced and no domains are empty.
 
     def assignment_complete(self, assignment):
         """
         Return True if `assignment` is complete (i.e., assigns a value to each
         crossword variable); return False otherwise.
         """
-        raise NotImplementedError
+        for variable in self.domains:
+            if variable not in assignment:
+                return False
+        return True
 
     def consistent(self, assignment):
         """
