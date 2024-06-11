@@ -120,10 +120,7 @@ class CrosswordCreator():
 
         Return True if a revision was made to the domain of `x`; return
         False if no revision was made.
-        """
-        # Deep copy the domains.
-        #domain_copy = copy.deepcopy(self.domains)
-        
+        """       
         # Set revision_made variable to False.
         revision_made = False
 
@@ -264,7 +261,21 @@ class CrosswordCreator():
         degree. If there is a tie, any of the tied variables are acceptable
         return values.
         """
-        raise NotImplementedError
+        variable_list = []
+
+        # Append the list with every variable that is not in assignment, including the number of values in domain remaining,
+        # and number of neighbors for that variable.  
+        for var in self.crossword.variables:
+            if var not in assignment:
+                variable_list.append([var, len(self.domains[var]), len(self.crossword.neighbors(var))])
+
+        if variable_list:
+            # Sort list ascending based on number of values in domain remaining,
+            # and descending on number of neighbors.
+            variable_list.sort(key=lambda x: (x[1], -x[2])) 
+            return variable_list[0][0]          # Return first entry of list, and return only the variable itself.
+        
+        return None
 
     def backtrack(self, assignment):
         """
@@ -275,7 +286,29 @@ class CrosswordCreator():
 
         If no assignment is possible, return None.
         """
-        raise NotImplementedError
+        # Check if the assignment is complete, if so return the assignment.
+        if self.assignment_complete(assignment):
+            return assignment
+        
+        # Select unassigned variable.
+        var = self.select_unassigned_variable(assignment)
+
+        # For every value (i.e. word) of an unassigned variable, and selected based on least-constraining heuristic,
+        # assign that value to the the variable, in an copy of the original given assignment.
+        for val in self.order_domain_values(var, assignment):
+            assignment_cpy = assignment.copy()
+            assignment_cpy[var] = val
+
+            # If the resulting assignment is consistent, provide the copy of assignment with added variable/value.
+            # If assignment is complete then, ith will be True and will return itself/completed assignment.
+            if self.consistent(assignment_cpy):
+
+                self.ac3([(neighbor_var, var) for neighbor_var in self.crossword.neighbors(var)])
+
+                result = self.backtrack(assignment_cpy)
+                if result:
+                    return result
+        return None
 
 def main():
 
