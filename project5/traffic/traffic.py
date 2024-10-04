@@ -58,8 +58,25 @@ def load_data(data_dir):
     be a list of integer labels, representing the categories for each of the
     corresponding `images`.
     """
-    raise NotImplementedError
+    # Create empty lists
+    images = []
+    labels = []
 
+    # Iterate through image folders in data_dir directory, and then through images in image folders
+    for foldername in range(0,NUM_CATEGORIES):
+        for filename in os.listdir(os.path.join(data_dir, str(foldername))):
+            # Open each image and resize
+            img = cv2.imread(os.path.join(data_dir, str(foldername), filename))
+            img = cv2.resize(img, (IMG_WIDTH, IMG_HEIGHT))
+
+            # Normalise image pixel intensities
+            img = img/255
+
+            # Append resized image and its label to the lists
+            images.append(img)
+            labels.append(int(foldername))
+
+    return (images, labels)
 
 def get_model():
     """
@@ -67,7 +84,44 @@ def get_model():
     `input_shape` of the first layer is `(IMG_WIDTH, IMG_HEIGHT, 3)`.
     The output layer should have `NUM_CATEGORIES` units, one for each category.
     """
-    raise NotImplementedError
+    # Create model
+    model = tf.keras.models.Sequential([
+    
+        # Convolutional layer. Learn 64 filters using a 3x3 kernel
+        tf.keras.layers.Conv2D(
+            64, (3, 3), activation="relu", input_shape=(IMG_WIDTH, IMG_HEIGHT, 3)
+        ),
+
+        # Max-pooling layer, using 2x2 pool size
+        tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
+
+        # Convolutional layer. Learn 64 filters using a 3x3 kernel
+        tf.keras.layers.Conv2D(
+            64, (3, 3), activation="relu"
+        ),
+
+        # Max-pooling layer, using 2x2 pool size
+        tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
+
+        # Flatten units
+        tf.keras.layers.Flatten(),
+
+        # Add a hidden layer with dropout
+        tf.keras.layers.Dense(512, activation="relu"),
+        tf.keras.layers.Dropout(0.5),
+
+        # Add an output layer with output units for all categories
+        tf.keras.layers.Dense(NUM_CATEGORIES, activation="softmax")
+    ])
+
+    # Compile model
+    model.compile(
+        optimizer="adam",
+        loss="categorical_crossentropy",
+        metrics=["accuracy"]
+    )
+
+    return model
 
 
 if __name__ == "__main__":
